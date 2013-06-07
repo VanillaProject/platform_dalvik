@@ -42,6 +42,9 @@
 #define NEED_PTHREADS_QUASI_ATOMICS 1
 #endif
 
+#elif defined(__sh__)
+#define NEED_PTHREADS_QUASI_ATOMICS 1
+
 #else
 #error "Unsupported atomic operations for this platform"
 #endif

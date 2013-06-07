@@ -17,6 +17,7 @@
 package com.android.dx.rop.type;
 
 import com.android.dx.util.Hex;
+
 import java.util.HashMap;
 
 /**

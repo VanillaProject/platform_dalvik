@@ -16,6 +16,7 @@
 
 package com.android.dx.rop.cst;
 
+import com.android.dx.rop.type.Type;
 import com.android.dx.util.FixedSizeList;
 
 /**

@@ -29,8 +29,9 @@
     SCRATCH_STORE(a1, 4)
     SCRATCH_STORE(a2, 8)
     SCRATCH_STORE(a3, 12)
+    move    rTEMP, a2                            # preserve a2
 
-    move    a0, a2
+    move    a0, rTEMP
     move    a1, rSELF
     la      t9, dvmFastMethodTraceEnter
     JALR(t9)
@@ -46,10 +47,7 @@
     JALR(t9)                                      # call methodToCall->nativeFunc
     lw      gp, STACK_OFFSET_GP(sp)
 
-    # restore a2 again
-    SCRATCH_LOAD(a2, 8)
-
-    move    a0, a2
+    move    a0, rTEMP
     move    a1, rSELF
     la      t9, dvmFastNativeMethodTraceExit
     JALR(t9)
@@ -134,7 +132,7 @@
     .word   dvmSelfVerificationMemOpDecode
 #endif
 
-    .global dvmCompilerTemplateEnd
-dvmCompilerTemplateEnd:
+    .global dmvCompilerTemplateEnd
+dmvCompilerTemplateEnd:
 
 #endif /* WITH_JIT */

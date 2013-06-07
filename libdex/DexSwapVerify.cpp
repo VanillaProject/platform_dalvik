@@ -187,7 +187,7 @@ static inline bool checkPtrRange(const CheckState* state,
  */
 #define CHECK_INDEX(_field, _limit) {                                       \
         if ((_field) >= (_limit)) {                                         \
-            ALOGW("Bad index: %s(%u) > %s(%u)",                             \
+            ALOGW("Bad index: %s(%u) > %s(%u)",                              \
                 #_field, (u4)(_field), #_limit, (u4)(_limit));              \
             return 0;                                                       \
         }                                                                   \
@@ -206,7 +206,7 @@ static inline bool checkPtrRange(const CheckState* state,
  */
 #define CHECK_INDEX_OR_NOINDEX(_field, _limit) {                            \
         if ((_field) != kDexNoIndex && (_field) >= (_limit)) {              \
-            ALOGW("Bad index: %s(%u) > %s(%u)",                             \
+            ALOGW("Bad index: %s(%u) > %s(%u)",                              \
                 #_field, (u4)(_field), #_limit, (u4)(_limit));              \
             return 0;                                                       \
         }                                                                   \
@@ -910,11 +910,6 @@ static void* swapClassDefItem(const CheckState* state, void* ptr) {
     SWAP_INDEX4_OR_NOINDEX(item->sourceFileIdx, state->pHeader->stringIdsSize);
     SWAP_OFFSET4(item->annotationsOff);
     SWAP_OFFSET4(item->classDataOff);
-
-    if ((item->accessFlags & ~ACC_CLASS_MASK) != 0) {
-        ALOGE("Bogus class access flags %x", item->accessFlags);
-        return NULL;
-    }
 
     return item + 1;
 }

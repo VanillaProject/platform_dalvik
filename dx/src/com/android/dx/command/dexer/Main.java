@@ -16,15 +16,13 @@
 
 package com.android.dx.command.dexer;
 
-import com.android.dex.Dex;
-import com.android.dex.DexFormat;
-import com.android.dex.util.FileUtils;
 import com.android.dx.Version;
 import com.android.dx.cf.code.SimException;
 import com.android.dx.cf.direct.ClassPathOpener;
 import com.android.dx.cf.iface.ParseException;
 import com.android.dx.command.DxConsole;
 import com.android.dx.command.UsageException;
+import com.android.dx.dex.DexFormat;
 import com.android.dx.dex.DexOptions;
 import com.android.dx.dex.cf.CfOptions;
 import com.android.dx.dex.cf.CfTranslator;
@@ -33,6 +31,7 @@ import com.android.dx.dex.code.PositionList;
 import com.android.dx.dex.file.ClassDefItem;
 import com.android.dx.dex.file.DexFile;
 import com.android.dx.dex.file.EncodedMethod;
+import com.android.dx.io.DexBuffer;
 import com.android.dx.merge.CollisionPolicy;
 import com.android.dx.merge.DexMerger;
 import com.android.dx.rop.annotation.Annotation;
@@ -40,6 +39,7 @@ import com.android.dx.rop.annotation.Annotations;
 import com.android.dx.rop.annotation.AnnotationsList;
 import com.android.dx.rop.cst.CstNat;
 import com.android.dx.rop.cst.CstString;
+import com.android.dx.util.FileUtils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -126,6 +126,9 @@ public class Main {
         "transaction", "xml"
     };
 
+    /** number of warnings during processing */
+    private static int warnings = 0;
+
     /** number of errors during processing */
     private static int errors = 0;
 
@@ -180,7 +183,8 @@ public class Main {
      * @return 0 if success > 0 otherwise.
      */
     public static int run(Arguments arguments) throws IOException {
-        // Reset the error count to start fresh.
+        // Reset the error/warning count to start fresh.
+        warnings = 0;
         errors = 0;
         // empty the list, so that  tools that load dx and keep it around
         // for multiple runs don't reuse older buffers.
@@ -253,18 +257,18 @@ public class Main {
      *     and the base dex do not exist.
      */
     private static byte[] mergeIncremental(byte[] update, File base) throws IOException {
-        Dex dexA = null;
-        Dex dexB = null;
+        DexBuffer dexA = null;
+        DexBuffer dexB = null;
 
         if (update != null) {
-            dexA = new Dex(update);
+            dexA = new DexBuffer(update);
         }
 
         if (base.exists()) {
-            dexB = new Dex(base);
+            dexB = new DexBuffer(base);
         }
 
-        Dex result;
+        DexBuffer result;
         if (dexA == null && dexB == null) {
             return null;
         } else if (dexA == null) {
@@ -285,15 +289,15 @@ public class Main {
      * same type, this fails with an exception.
      */
     private static byte[] mergeLibraryDexBuffers(byte[] outArray) throws IOException {
-        for (byte[] libraryDex : libraryDexBuffers) {
+        for (byte[] libraryDexBuffer : libraryDexBuffers) {
             if (outArray == null) {
-                outArray = libraryDex;
+                outArray = libraryDexBuffer;
                 continue;
             }
 
-            Dex a = new Dex(outArray);
-            Dex b = new Dex(libraryDex);
-            Dex ab = new DexMerger(a, b, CollisionPolicy.FAIL).merge();
+            DexBuffer a = new DexBuffer(outArray);
+            DexBuffer b = new DexBuffer(libraryDexBuffer);
+            DexBuffer ab = new DexMerger(a, b, CollisionPolicy.FAIL).merge();
             outArray = ab.getBytes();
         }
 
@@ -332,7 +336,7 @@ public class Main {
             }
         } catch (StopProcessing ex) {
             /*
-             * Ignore it and just let the error reporting do
+             * Ignore it and just let the warning/error reporting do
              * their things.
              */
         }
@@ -344,6 +348,11 @@ public class Main {
             } catch (InterruptedException ex) {
                 throw new RuntimeException("Timed out waiting for threads.");
             }
+        }
+
+        if (warnings != 0) {
+            DxConsole.err.println(warnings + " warning" +
+                               ((warnings == 1) ? "" : "s"));
         }
 
         if (errors != 0) {
@@ -489,7 +498,8 @@ public class Main {
                 ex.printContext(DxConsole.err);
             }
         }
-        errors++;
+
+        warnings++;
         return false;
     }
 

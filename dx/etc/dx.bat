@@ -28,8 +28,7 @@ cd /d %~dp0
 
 rem Check we have a valid Java.exe in the path.
 set java_exe=
-if exist    ..\tools\lib\find_java.bat call    ..\tools\lib\find_java.bat
-if exist ..\..\tools\lib\find_java.bat call ..\..\tools\lib\find_java.bat
+call ..\tools\lib\find_java.bat
 if not defined java_exe goto :EOF
 
 set jarfile=dx.jar

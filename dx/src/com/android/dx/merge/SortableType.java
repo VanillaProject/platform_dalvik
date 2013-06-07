@@ -16,8 +16,8 @@
 
 package com.android.dx.merge;
 
-import com.android.dex.ClassDef;
-import com.android.dex.Dex;
+import com.android.dx.io.ClassDef;
+import com.android.dx.io.DexBuffer;
 import java.util.Comparator;
 
 /**
@@ -43,17 +43,17 @@ final class SortableType {
         }
     };
 
-    private final Dex dex;
+    private final DexBuffer buffer;
     private ClassDef classDef;
     private int depth = -1;
 
-    public SortableType(Dex dex, ClassDef classDef) {
-        this.dex = dex;
+    public SortableType(DexBuffer buffer, ClassDef classDef) {
+        this.buffer = buffer;
         this.classDef = classDef;
     }
 
-    public Dex getDex() {
-        return dex;
+    public DexBuffer getBuffer() {
+        return buffer;
     }
 
     public ClassDef getClassDef() {

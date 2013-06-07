@@ -226,7 +226,7 @@ static void netShutdown(JdwpNetState* netState)
     /* if we might be sitting in select, kick us loose */
     if (netState->wakePipe[1] >= 0) {
         ALOGV("+++ writing to wakePipe");
-        TEMP_FAILURE_RETRY(write(netState->wakePipe[1], "", 1));
+        (void) write(netState->wakePipe[1], "", 1);
     }
 }
 static void netShutdownExtern(JdwpState* state)
@@ -586,7 +586,7 @@ static bool handlePacket(JdwpState* state)
     JdwpReqHeader hdr;
     u4 length, id;
     u1 flags, cmdSet, cmd;
-    u2 error;
+    //u2 error;
     bool reply;
     int dataLen;
 
@@ -599,7 +599,7 @@ static bool handlePacket(JdwpState* state)
     flags = read1(&buf);
     if ((flags & kJDWPFlagReply) != 0) {
         reply = true;
-        error = read2BE(&buf);
+        /*error =*/ read2BE(&buf);
     } else {
         reply = false;
         cmdSet = read1(&buf);
@@ -789,8 +789,8 @@ static bool processIncoming(JdwpState* state)
         }
 
         errno = 0;
-        cc = TEMP_FAILURE_RETRY(write(netState->clientSock, netState->inputBuffer,
-                                      kMagicHandshakeLen));
+        cc = write(netState->clientSock, netState->inputBuffer,
+                kMagicHandshakeLen);
         if (cc != kMagicHandshakeLen) {
             ALOGE("Failed writing handshake bytes: %s (%d of %d)",
                 strerror(errno), cc, (int) kMagicHandshakeLen);

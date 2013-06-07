@@ -40,5 +40,9 @@
      */
 .L${opcode}_debugger:
     lw      a1, offThread_mainHandlerTable(rSELF)
+    .if $jumbo
+    li      t0, OP_INVOKE_DIRECT_JUMBO
+    .else
     li      t0, OP_INVOKE_DIRECT_RANGE
+    .endif
     GOTO_OPCODE_BASE(a1, t0)            # execute it

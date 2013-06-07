@@ -42,7 +42,6 @@ When allocating a physical register for an operand, we can't spill the operands 
 #include "NcgAot.h"
 #include "enc_wrapper.h"
 #include "vm/mterp/Mterp.h"
-#include "vm/mterp/common/FindInterface.h"
 #include "NcgHelper.h"
 #include <math.h>
 #include "interp/InterpState.h"
@@ -2706,18 +2705,18 @@ int call_dvmCanPutArrayElement() {
     return 0;
 }
 
-//!generate native code to call dvmFindInterfaceMethodInCache
+//!generate native code to call dvmFindInterfaceMethodInCache2
 
 //!
 int call_dvmFindInterfaceMethodInCache() {
     typedef Method* (*vmHelper)(ClassObject*, u4, const Method*, DvmDex*);
-    vmHelper funcPtr = dvmFindInterfaceMethodInCache;
+    vmHelper funcPtr = dvmFindInterfaceMethodInCache2;
     if(gDvm.executionMode == kExecutionModeNcgO1) {
-        beforeCall("dvmFindInterfaceMethodInCache");
-        callFuncPtr((int)funcPtr, "dvmFindInterfaceMethodInCache");
-        afterCall("dvmFindInterfaceMethodInCache");
+        beforeCall("dvmFindInterfaceMethodInCache2");
+        callFuncPtr((int)funcPtr, "dvmFindInterfaceMethodInCache2");
+        afterCall("dvmFindInterfaceMethodInCache2");
     } else {
-        callFuncPtr((int)funcPtr, "dvmFindInterfaceMethodInCache");
+        callFuncPtr((int)funcPtr, "dvmFindInterfaceMethodInCache2");
     }
     return 0;
 }

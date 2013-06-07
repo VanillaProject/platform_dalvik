@@ -16,17 +16,18 @@
 
 package com.android.dx.cf.direct;
 
-import com.android.dex.util.FileUtils;
-import java.io.ByteArrayOutputStream;
+import com.android.dx.util.FileUtils;
+
 import java.io.File;
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipEntry;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Opens all the class files found in a class path element. Path elements

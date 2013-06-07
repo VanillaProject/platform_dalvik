@@ -766,7 +766,9 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
     if (pCtrl->active && pCtrl->thread == self) {
         int frameDepth;
         bool doStop = false;
+#ifndef LOG_NDEBUG
         const char* msg = NULL;
+#endif
 
         assert(!dvmIsNativeMethod(method));
 
@@ -778,14 +780,20 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
              */
             if (pCtrl->method != method) {
                 doStop = true;
+#ifndef LOG_NDEBUG
                 msg = "new method";
+#endif
             } else if (pCtrl->size == SS_MIN) {
                 doStop = true;
+#ifndef LOG_NDEBUG
                 msg = "new instruction";
+#endif
             } else if (!dvmAddressSetGet(
                     pCtrl->pAddressSet, pc - method->insns)) {
                 doStop = true;
+#ifndef LOG_NDEBUG
                 msg = "new line";
+#endif
             }
         } else if (pCtrl->depth == SD_OVER) {
             /*
@@ -799,16 +807,22 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
             if (frameDepth < pCtrl->frameDepth) {
                 /* popped up one or more frames, always trigger */
                 doStop = true;
+#ifndef LOG_NDEBUG
                 msg = "method pop";
+#endif
             } else if (frameDepth == pCtrl->frameDepth) {
                 /* same depth, see if we moved */
                 if (pCtrl->size == SS_MIN) {
                     doStop = true;
+#ifndef LOG_NDEBUG
                     msg = "new instruction";
+#endif
                 } else if (!dvmAddressSetGet(pCtrl->pAddressSet,
                             pc - method->insns)) {
                     doStop = true;
+#ifndef LOG_NDEBUG
                     msg = "new line";
+#endif
                 }
             }
         } else {
@@ -824,7 +838,9 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
             frameDepth = dvmComputeVagueFrameDepth(self, fp);
             if (frameDepth < pCtrl->frameDepth) {
                 doStop = true;
+#ifndef LOG_NDEBUG
                 msg = "method pop";
+#endif
             }
         }
 
@@ -999,6 +1015,9 @@ void dvmDumpRegs(const Method* method, const u4* framePtr, bool inOnly)
 s4 dvmInterpHandlePackedSwitch(const u2* switchData, s4 testVal)
 {
     const int kInstrLen = 3;
+    u2 size;
+    s4 firstKey;
+    const s4* entries;
 
     /*
      * Packed switch data format:
@@ -1015,14 +1034,13 @@ s4 dvmInterpHandlePackedSwitch(const u2* switchData, s4 testVal)
         return kInstrLen;
     }
 
-    u2 size = *switchData++;
+    size = *switchData++;
     assert(size > 0);
 
-    s4 firstKey = *switchData++;
+    firstKey = *switchData++;
     firstKey |= (*switchData++) << 16;
 
-    int index = testVal - firstKey;
-    if (index < 0 || index >= size) {
+    if (testVal < firstKey || testVal >= firstKey + size) {
         LOGVV("Value %d not found in switch (%d-%d)",
             testVal, firstKey, firstKey+size-1);
         return kInstrLen;
@@ -1031,14 +1049,14 @@ s4 dvmInterpHandlePackedSwitch(const u2* switchData, s4 testVal)
     /* The entries are guaranteed to be aligned on a 32-bit boundary;
      * we can treat them as a native int array.
      */
-    const s4* entries = (const s4*) switchData;
+    entries = (const s4*) switchData;
     assert(((u4)entries & 0x3) == 0);
 
-    assert(index >= 0 && index < size);
+    assert(testVal - firstKey >= 0 && testVal - firstKey < size);
     LOGVV("Value %d found in slot %d (goto 0x%02x)",
-        testVal, index,
-        s4FromSwitchData(&entries[index]));
-    return s4FromSwitchData(&entries[index]);
+        testVal, testVal - firstKey,
+        s4FromSwitchData(&entries[testVal - firstKey]));
+    return s4FromSwitchData(&entries[testVal - firstKey]);
 }
 
 /*
@@ -1669,9 +1687,6 @@ void dvmInitializeInterpBreak(Thread* thread)
     if (gDvm.debuggerActive) {
         dvmEnableSubMode(thread, kSubModeDebuggerActive);
     }
-#if defined(WITH_JIT)
-    dvmJitUpdateThreadStateSingle(thread);
-#endif
 #if 0
     // Debugging stress mode - force checkBefore
     dvmEnableSubMode(thread, kSubModeCheckAlways);

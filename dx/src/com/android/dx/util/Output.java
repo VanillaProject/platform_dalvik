@@ -16,8 +16,6 @@
 
 package com.android.dx.util;
 
-import com.android.dex.util.ByteOutput;
-
 /**
  * Interface for a sink for binary output. This is similar to
  * {@code java.util.DataOutput}, but no {@code IOExceptions}

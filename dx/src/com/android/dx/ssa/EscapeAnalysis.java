@@ -39,6 +39,7 @@ import com.android.dx.rop.cst.Zeroes;
 import com.android.dx.rop.type.StdTypeList;
 import com.android.dx.rop.type.Type;
 import com.android.dx.rop.type.TypeBearer;
+
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;

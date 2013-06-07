@@ -26,6 +26,7 @@ import com.android.dx.rop.cst.CstFieldRef;
 import com.android.dx.rop.cst.CstString;
 import com.android.dx.rop.cst.CstType;
 import com.android.dx.util.AnnotatedOutput;
+
 import java.util.BitSet;
 
 /**

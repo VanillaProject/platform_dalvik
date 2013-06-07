@@ -598,6 +598,10 @@ static Object* convertReturnType(Object* valueObj, ClassObject* methodReturn)
     }
     ALOGV("HEY: converting valueObj from [%s to [%s",
         srcElemClass->descriptor, dstElemClass->descriptor);
+#ifdef LOG_NDEBUG
+    // variable defined but not used => breakage on -Werror
+    (void)srcElemClass;
+#endif
 
     ArrayObject* srcArray = (ArrayObject*) valueObj;
     u4 length = srcArray->length;
@@ -1122,9 +1126,9 @@ static const u1* searchEncodedAnnotation(const ClassObject* clazz,
     const u1* ptr, const char* name)
 {
     DexFile* pDexFile = clazz->pDvmDex->pDexFile;
-    u4 typeIdx, size;
+    u4 /*typeIdx,*/ size;
 
-    typeIdx = readUleb128(&ptr);
+    /*typeIdx =*/ readUleb128(&ptr);
     size = readUleb128(&ptr);
     //printf("#####   searching ptr=%p type=%u size=%u\n", ptr, typeIdx, size);
 
@@ -1962,22 +1966,17 @@ static u4 getFieldIdx(const Field* field)
 static const DexAnnotationSetItem* findAnnotationSetForField(const Field* field)
 {
     ClassObject* clazz = field->clazz;
-    DvmDex* pDvmDex = clazz->pDvmDex;
-    if (pDvmDex == NULL) {
-        return NULL;
-    }
+    DexFile* pDexFile = clazz->pDvmDex->pDexFile;
+    const DexAnnotationsDirectoryItem* pAnnoDir;
+    const DexFieldAnnotationsItem* pFieldList;
 
-    DexFile* pDexFile = pDvmDex->pDexFile;
-
-    const DexAnnotationsDirectoryItem* pAnnoDir = getAnnoDirectory(pDexFile, clazz);
-    if (pAnnoDir == NULL) {
+    pAnnoDir = getAnnoDirectory(pDexFile, clazz);
+    if (pAnnoDir == NULL)
         return NULL;
-    }
 
-    const DexFieldAnnotationsItem* pFieldList = dexGetFieldAnnotations(pDexFile, pAnnoDir);
-    if (pFieldList == NULL) {
+    pFieldList = dexGetFieldAnnotations(pDexFile, pAnnoDir);
+    if (pFieldList == NULL)
         return NULL;
-    }
 
     /*
      * Run through the list and find a matching field.  We compare the

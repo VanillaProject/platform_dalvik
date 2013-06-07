@@ -41,6 +41,7 @@ import com.android.dx.rop.type.Type;
 import com.android.dx.rop.type.TypeBearer;
 import com.android.dx.rop.type.TypeList;
 import com.android.dx.util.IntList;
+
 import java.util.ArrayList;
 
 /**

@@ -1253,9 +1253,6 @@ static void dumpFrames(const DebugOutputTarget* target, void* framePtr,
                         if (obj->clazz == gDvm.classJavaLangVMThread) {
                             joinThread = dvmGetThreadFromThreadObject(obj);
                         }
-                        if (joinThread == NULL) {
-                            joinThread = dvmGetObjectLockHolder(obj);
-                        }
                         printWaitMessage(target, "on", obj, joinThread);
                     }
                 } else if (thread->status == THREAD_MONITOR) {

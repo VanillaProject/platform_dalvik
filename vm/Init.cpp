@@ -33,7 +33,6 @@
 #include "test/Test.h"
 #include "mterp/Mterp.h"
 #include "Hash.h"
-#include "JniConstants.h"
 
 #if defined(WITH_JIT)
 #include "compiler/codegen/Optimizer.h"
@@ -1347,6 +1346,12 @@ static void blockSignals()
         cc = sigaction(SIGBUS, &sa, NULL);
         assert(cc == 0);
     }
+#ifdef NDEBUG
+    // assert() is defined to nothing - resulting in
+    // cc: variable defined but not used (which breaks
+    // the build if -Werror is on)
+    (void)cc;
+#endif
 }
 
 class ScopedShutdown {
@@ -1619,9 +1624,6 @@ static bool registerSystemNatives(JNIEnv* pEnv)
     // Must set this before allowing JNI-based method registration.
     self->status = THREAD_NATIVE;
 
-    // First set up JniConstants, which is used by libcore.
-    JniConstants::init(pEnv);
-
     // Most JNI libraries can just use System.loadLibrary, but you can't
     // if you're the library that implements System.loadLibrary!
     loadJniLibrary("javacore");
@@ -1649,12 +1651,40 @@ static bool initZygote()
         return -1;
     }
 
-    // Mark rootfs as being a slave so that changes from default
-    // namespace only flow into our children.
+    // Mark ANDROID_STORAGE (e.g., /storage) as being a slave so that changes
+    // from default namespace only flow into our children.  Notes:
+    // 1. ANDROID_STORAGE must already serve as a mountpoint, e.g., for a tmpfs
+    //    volume, as only mountpoints may be marked and rootfs cannot be bind
+    //    mounted.
+    // 2. EMULATED_STORAGE_TARGET (e.g., /storage/emulated), if used, must be
+    //    path-prefixed by ANDROID_STORAGE.
+    // 3. Multi-user sandbox mounts must be made under ANDROID_STORAGE to
+    //    remain hidden from other users.
+    // 4. Dalvik-based apps may mount anywhere, except under ANDROID_STORAGE,
+    //    to provide a system-wide shared mount between apps and users.
+    const char* storage_base = getenv("ANDROID_STORAGE");
+    if (storage_base != NULL) {
+        if (mount(NULL, storage_base, NULL, (MS_SLAVE | MS_REC), NULL) == 0) {
+            // ANDROID_STORAGE successfully marked as slave, leave the rest of the
+            // filesystem hierarchy marked as shared.
+            goto mounted_slave;
+        } else {
+            // Warn only, init.rc is likely missing a tmpfs mount for ANDROID_STORAGE.
+            SLOGW("Failed to mount %s as MS_SLAVE: %s", storage_base, strerror(errno));
+        }
+    } else {
+        SLOGW("ANDROID_STORAGE environment variable undefined");
+    }
+
+    // Fallback: Mark rootfs as being a slave so that changes from default
+    // namespace only flow into our children.  All mounts under "/" will be
+    // hidden from other apps and users.
     if (mount("rootfs", "/", NULL, (MS_SLAVE | MS_REC), NULL) == -1) {
         SLOGE("Failed to mount() rootfs as MS_SLAVE: %s", strerror(errno));
         return -1;
     }
+
+mounted_slave:
 
     // Create a staging tmpfs that is shared by our children; they will
     // bind mount storage into their respective private namespaces, which
@@ -1677,10 +1707,12 @@ static bool initZygote()
  */
 bool dvmInitAfterZygote()
 {
+#ifndef LOG_NDEBUG
     u8 startHeap, startQuit, startJdwp;
     u8 endHeap, endQuit, endJdwp;
 
     startHeap = dvmGetRelativeTimeUsec();
+#endif
 
     /*
      * Post-zygote heap initialization, including starting
@@ -1689,8 +1721,10 @@ bool dvmInitAfterZygote()
     if (!dvmGcStartupAfterZygote())
         return false;
 
+#ifndef LOG_NDEBUG
     endHeap = dvmGetRelativeTimeUsec();
     startQuit = dvmGetRelativeTimeUsec();
+#endif
 
     /* start signal catcher thread that dumps stacks on SIGQUIT */
     if (!gDvm.reduceSignals && !gDvm.noQuitHandler) {
@@ -1704,8 +1738,10 @@ bool dvmInitAfterZygote()
             return false;
     }
 
+#ifndef LOG_NDEBUG
     endQuit = dvmGetRelativeTimeUsec();
     startJdwp = dvmGetRelativeTimeUsec();
+#endif
 
     /*
      * Start JDWP thread.  If the command-line debugger flags specified
@@ -1716,7 +1752,9 @@ bool dvmInitAfterZygote()
         ALOGD("JDWP init failed; continuing anyway");
     }
 
+#ifndef LOG_NDEBUG
     endJdwp = dvmGetRelativeTimeUsec();
+#endif
 
     ALOGV("thread-start heap=%d quit=%d jdwp=%d total=%d usec",
         (int)(endHeap-startHeap), (int)(endQuit-startQuit),

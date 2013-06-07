@@ -106,8 +106,8 @@ dvmCompiler_TEMPLATE_INTERPRET:
     .section .data.rel.ro
     .align  4
 
-    .global dvmCompilerTemplateEnd
-dvmCompilerTemplateEnd:
+    .global dmvCompilerTemplateEnd
+dmvCompilerTemplateEnd:
 
 #endif /* WITH_JIT */
 

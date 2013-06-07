@@ -19,7 +19,6 @@
  */
 #include "Dalvik.h"
 #include "JniInternal.h"
-#include "Misc.h"
 #include "ScopedPthreadMutexLock.h"
 #include "UniquePtr.h"
 
@@ -653,31 +652,6 @@ void dvmDumpJniReferenceTables() {
     self->jniLocalRefTable.dump("JNI local");
     gDvm.jniGlobalRefTable.dump("JNI global");
     dvmDumpReferenceTable(&gDvm.jniPinRefTable, "JNI pinned array");
-}
-
-void dvmDumpJniStats(DebugOutputTarget* target) {
-    dvmPrintDebugMessage(target, "JNI: CheckJNI is %s", gDvmJni.useCheckJni ? "on" : "off");
-    if (gDvmJni.forceCopy) {
-        dvmPrintDebugMessage(target, " (with forcecopy)");
-    }
-    dvmPrintDebugMessage(target, "; workarounds are %s", gDvmJni.workAroundAppJniBugs ? "on" : "off");
-
-    dvmLockMutex(&gDvm.jniPinRefLock);
-    dvmPrintDebugMessage(target, "; pins=%d", dvmReferenceTableEntries(&gDvm.jniPinRefTable));
-    dvmUnlockMutex(&gDvm.jniPinRefLock);
-
-    dvmLockMutex(&gDvm.jniGlobalRefLock);
-    dvmPrintDebugMessage(target, "; globals=%d", gDvm.jniGlobalRefTable.capacity());
-    dvmUnlockMutex(&gDvm.jniGlobalRefLock);
-
-    dvmLockMutex(&gDvm.jniWeakGlobalRefLock);
-    size_t weaks = gDvm.jniWeakGlobalRefTable.capacity();
-    if (weaks > 0) {
-        dvmPrintDebugMessage(target, " (plus %d weak)", weaks);
-    }
-    dvmUnlockMutex(&gDvm.jniWeakGlobalRefLock);
-
-    dvmPrintDebugMessage(target, "\n\n");
 }
 
 /*
@@ -2726,8 +2700,8 @@ static jobject NewDirectByteBuffer(JNIEnv* env, void* address, jlong capacity) {
         ReportJniError();
     }
 
-    /* create an instance of java.nio.DirectByteBuffer */
-    ClassObject* bufferClazz = gDvm.classJavaNioDirectByteBuffer;
+    /* create an instance of java.nio.ReadWriteDirectByteBuffer */
+    ClassObject* bufferClazz = gDvm.classJavaNioReadWriteDirectByteBuffer;
     if (!dvmIsClassInitialized(bufferClazz) && !dvmInitClass(bufferClazz)) {
         return NULL;
     }
@@ -2738,8 +2712,8 @@ static jobject NewDirectByteBuffer(JNIEnv* env, void* address, jlong capacity) {
     /* call the constructor */
     jobject result = addLocalReference(ts.self(), newObj);
     JValue unused;
-    dvmCallMethod(ts.self(), gDvm.methJavaNioDirectByteBuffer_init,
-            newObj, &unused, (jlong) address, (jint) capacity);
+    dvmCallMethod(ts.self(), gDvm.methJavaNioReadWriteDirectByteBuffer_init,
+            newObj, &unused, (jint) address, (jint) capacity);
     if (dvmGetException(ts.self()) != NULL) {
         deleteLocalReference(ts.self(), result);
         return NULL;
@@ -2757,7 +2731,7 @@ static void* GetDirectBufferAddress(JNIEnv* env, jobject jbuf) {
 
     // All Buffer objects have an effectiveDirectAddress field.
     Object* bufObj = dvmDecodeIndirectRef(ts.self(), jbuf);
-    return (void*) dvmGetFieldLong(bufObj, gDvm.offJavaNioBuffer_effectiveDirectAddress);
+    return (void*) dvmGetFieldInt(bufObj, gDvm.offJavaNioBuffer_effectiveDirectAddress);
 }
 
 /*
@@ -2845,6 +2819,8 @@ static jint attachThread(JavaVM* vm, JNIEnv** p_env, void* thr_args, bool isDaem
         argsCopy.name = NULL;
         argsCopy.group = (jobject) dvmGetMainThreadGroup();
     } else {
+        assert(args->version >= JNI_VERSION_1_2);
+
         argsCopy.version = args->version;
         argsCopy.name = args->name;
         if (args->group != NULL) {
@@ -3502,8 +3478,6 @@ jint JNI_CreateJavaVM(JavaVM** p_vm, JNIEnv** p_env, void* vm_args) {
                 } else {
                     dvmFprintf(stderr, "ERROR: CreateJavaVM failed: unknown -Xjniopts option '%s'\n",
                             jniOpt);
-                    free(pVM);
-                    free(jniOpts);
                     return JNI_ERR;
                 }
                 jniOpt += strlen(jniOpt) + 1;
@@ -3521,7 +3495,6 @@ jint JNI_CreateJavaVM(JavaVM** p_vm, JNIEnv** p_env, void* vm_args) {
 
     if (gDvmJni.jniVm != NULL) {
         dvmFprintf(stderr, "ERROR: Dalvik only supports one VM per process\n");
-        free(pVM);
         return JNI_ERR;
     }
     gDvmJni.jniVm = (JavaVM*) pVM;

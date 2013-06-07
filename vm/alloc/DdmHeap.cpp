@@ -189,10 +189,6 @@ struct HeapChunkContext {
 
 static void flush_hpsg_chunk(HeapChunkContext *ctx)
 {
-    if (ctx->pieceLenField == NULL && ctx->needHeader) {
-        /* Already flushed */
-        return;
-    }
     /* Patch the "length of piece" field.
      */
     assert(ctx->buf <= ctx->pieceLenField &&

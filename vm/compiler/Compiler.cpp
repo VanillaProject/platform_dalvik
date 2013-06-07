@@ -27,7 +27,7 @@
 #endif
 
 extern "C" void dvmCompilerTemplateStart(void);
-extern "C" void dvmCompilerTemplateEnd(void);
+extern "C" void dmvCompilerTemplateEnd(void);
 
 static inline bool workQueueLength(void)
 {
@@ -142,6 +142,9 @@ bool dvmCompilerWorkEnqueue(const u2 *pc, WorkOrderKind kind, void* info)
     gDvmJit.compilerQueueLength++;
     cc = pthread_cond_signal(&gDvmJit.compilerQueueActivity);
     assert(cc == 0);
+#ifdef NDEBUG
+    (void)cc; // prevent error on -Werror
+#endif
 
     dvmUnlockMutex(&gDvmJit.compilerLock);
     return result;
@@ -193,7 +196,7 @@ bool dvmCompilerSetupCodeCache(void)
 
 #ifndef ARCH_IA32
     /* Copy the template code into the beginning of the code cache */
-    int templateSize = (intptr_t) dvmCompilerTemplateEnd -
+    int templateSize = (intptr_t) dmvCompilerTemplateEnd -
                        (intptr_t) dvmCompilerTemplateStart;
     memcpy((void *) gDvmJit.codeCache,
            (void *) dvmCompilerTemplateStart,
@@ -658,6 +661,9 @@ static void *compilerThreadStart(void *arg)
             int cc;
             cc = pthread_cond_signal(&gDvmJit.compilerQueueEmpty);
             assert(cc == 0);
+#ifdef NDEBUG
+            (void)cc; // prevent bug on -Werror
+#endif
             pthread_cond_wait(&gDvmJit.compilerQueueActivity,
                               &gDvmJit.compilerLock);
             continue;

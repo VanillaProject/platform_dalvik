@@ -16,6 +16,8 @@
 
 package com.android.dx.io.instructions;
 
+import java.io.EOFException;
+
 /**
  * Base implementation of {@link CodeCursor}.
  */

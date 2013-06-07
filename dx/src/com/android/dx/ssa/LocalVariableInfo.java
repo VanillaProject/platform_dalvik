@@ -16,9 +16,10 @@
 
 package com.android.dx.ssa;
 
-import com.android.dx.rop.code.RegisterSpec;
-import com.android.dx.rop.code.RegisterSpecSet;
 import com.android.dx.util.MutabilityControl;
+import com.android.dx.rop.code.RegisterSpecSet;
+import com.android.dx.rop.code.RegisterSpec;
+
 import java.util.HashMap;
 import java.util.List;
 

@@ -21,7 +21,8 @@ dexdump_src_files := \
 		DexList.cpp
 
 dexdump_c_includes := \
-		dalvik
+		dalvik \
+		$(JNI_H_INCLUDE)
 
 dexdump_shared_libraries :=
 

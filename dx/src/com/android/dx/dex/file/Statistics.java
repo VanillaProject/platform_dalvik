@@ -17,6 +17,7 @@
 package com.android.dx.dex.file;
 
 import com.android.dx.util.AnnotatedOutput;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.TreeMap;

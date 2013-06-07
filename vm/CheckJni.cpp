@@ -497,7 +497,6 @@ public:
      * m - jmethodID
      * p - void*
      * r - jint (for release mode arguments)
-     * t - thread args (for AttachCurrentThread)
      * u - const char* (modified UTF-8)
      * z - jsize (for lengths; use i if negative values are okay)
      * v - JavaVM*
@@ -612,7 +611,7 @@ public:
                     if (!entry) {
                         StringAppendF(&msg, " (%p)", mid);
                     }
-                } else if (ch == 'p' || ch == 't') { // void* ("pointer" or "thread args")
+                } else if (ch == 'p') { // void* ("pointer")
                     void* p = va_arg(ap, void*);
                     if (p == NULL) {
                         msg += "NULL";
@@ -678,8 +677,6 @@ public:
                     checkReleaseMode(va_arg(ap, jint));
                 } else if (ch == 's') {
                     checkString(va_arg(ap, jstring));
-                } else if (ch == 't') {
-                    checkThreadArgs(va_arg(ap, void*));
                 } else if (ch == 'u') {
                     if ((mFlags & kFlag_Release) != 0) {
                         checkNonNull(va_arg(ap, const char*));
@@ -823,14 +820,6 @@ private:
 
     void checkString(jstring s) {
         checkInstance(s, gDvm.classJavaLangString, "jstring");
-    }
-
-    void checkThreadArgs(void* thread_args) {
-        JavaVMAttachArgs* args = static_cast<JavaVMAttachArgs*>(thread_args);
-        if (args != NULL && args->version < JNI_VERSION_1_2) {
-            ALOGW("JNI WARNING: bad value for JNI version (%d) (%s)", args->version, mFunctionName);
-            abortMaybe();
-        }
     }
 
     void checkThread(int flags) {
@@ -2026,13 +2015,13 @@ static jint Check_DestroyJavaVM(JavaVM* vm) {
 
 static jint Check_AttachCurrentThread(JavaVM* vm, JNIEnv** p_env, void* thr_args) {
     ScopedCheck sc(false, __FUNCTION__);
-    sc.check(true, "vpt", vm, p_env, thr_args);
+    sc.check(true, "vpp", vm, p_env, thr_args);
     return CHECK_JNI_EXIT("I", baseVm(vm)->AttachCurrentThread(vm, p_env, thr_args));
 }
 
 static jint Check_AttachCurrentThreadAsDaemon(JavaVM* vm, JNIEnv** p_env, void* thr_args) {
     ScopedCheck sc(false, __FUNCTION__);
-    sc.check(true, "vpt", vm, p_env, thr_args);
+    sc.check(true, "vpp", vm, p_env, thr_args);
     return CHECK_JNI_EXIT("I", baseVm(vm)->AttachCurrentThreadAsDaemon(vm, p_env, thr_args));
 }
 

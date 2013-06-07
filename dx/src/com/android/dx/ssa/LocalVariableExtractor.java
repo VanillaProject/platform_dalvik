@@ -16,9 +16,10 @@
 
 package com.android.dx.ssa;
 
-import com.android.dx.rop.code.RegisterSpec;
 import com.android.dx.rop.code.RegisterSpecSet;
+import com.android.dx.rop.code.RegisterSpec;
 import com.android.dx.util.IntList;
+
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;

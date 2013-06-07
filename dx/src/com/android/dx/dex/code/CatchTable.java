@@ -16,6 +16,7 @@
 
 package com.android.dx.dex.code;
 
+import com.android.dx.rop.cst.CstType;
 import com.android.dx.util.FixedSizeList;
 
 /**

@@ -178,6 +178,11 @@ static bool setPredecessors(VerifierData* vdata, VfyBasicBlock* curBlock,
         gotBranch = dvmGetBranchOffset(meth, insnFlags, curIdx,
                 &branchOffset, &unused);
         assert(gotBranch);
+#ifdef NDEBUG
+        // assert is optimized out, leaving gotBranch defined but
+        // not used, causing a compiler warning -> error on -Werror
+        (void)gotBranch;
+#endif
         absOffset = curIdx + branchOffset;
         assert(absOffset >= 0 && (u4) absOffset < vdata->insnsSize);
 
@@ -544,9 +549,6 @@ void dvmFreeVfyBasicBlocks(VerifierData* vdata)
             continue;
 
         dvmPointerSetFree(block->predecessors);
-        dvmFreeBitVector(block->liveRegs);
         free(block);
     }
-
-    free(vdata->basicBlocks);
 }
